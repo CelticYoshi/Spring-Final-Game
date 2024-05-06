@@ -1,47 +1,87 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class ThirdPersonPlayerController : MonoBehaviour
 {
-    public float turnSpeed = 20f;
-    public float moveSpeed = 1f;
-    private float _horizontalInput;
-    private float _forwardInput;
-    Vector3 m_Movement;
-    Rigidbody m_Rigidbody;
-    Quaternion m_Rotation = Quaternion.identity;
+    [Header("Assigned Components")]
+    [SerializeField] private Animator _animator;
+    [SerializeField] private CharacterController _characterController;
+
+    [Header("Player Movement Values")]
+    public float maximumSpeed;
+    public float rotationSpeed;
+    public float jumpForce;
+    public float jumpButtonGracePeriod;
+    private float _yForce;
+    private float originalStepOffset;
+    private float? _lastGroundedTime;
+    private float? _jumpButtonPressedTime;
 
     // Start is called before the first frame update
     void Start()
     {
-        m_Rigidbody = GetComponent<Rigidbody>();
-    }
-
-    void Update()
-    {
-       
+        originalStepOffset = _characterController.stepOffset;    
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
-        
-        m_Movement.Set(horizontal, 0f, vertical);
-        m_Movement.Normalize();
+        float horizontalInput = Input.GetAxis("Horizontal");
+        float verticalInput = Input.GetAxis("Vertical");
 
-        bool hasHorizontalInput = !Mathf.Approximately(horizontal, 0f);
-        bool hasVerticalInput = !Mathf.Approximately(vertical, 0f);
-        bool isWalking = hasHorizontalInput || hasVerticalInput;
+        Vector3 movementDirection = new Vector3(horizontalInput, 0, verticalInput);
+        float inputMagnitude = Mathf.Clamp01(movementDirection.magnitude);
 
-        Vector3 desiredForward = Vector3.RotateTowards(transform.forward, m_Movement, turnSpeed * Time.deltaTime, 0f);
-        m_Rotation = Quaternion.LookRotation(desiredForward);
+        if(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+        {
+            inputMagnitude /= 2;
+        }
+        _animator.SetFloat("InputMagnitude", inputMagnitude, 0.05f, Time.deltaTime);
 
-        m_Rigidbody.MovePosition(m_Rigidbody.position + m_Movement * moveSpeed * Time.deltaTime);
-        m_Rigidbody.MoveRotation(m_Rotation);
-    }
+        float speed = inputMagnitude * maximumSpeed;
+        movementDirection.Normalize();
+
+        _yForce += Physics.gravity.y * Time.deltaTime;
+
+        if(_characterController.isGrounded)
+        {
+            _lastGroundedTime = Time.time;
+        }
+
+        if(Input.GetButtonDown("Jump"))
+        {
+            _jumpButtonPressedTime = Time.time;
+        }
+
+        if (Time.time - _lastGroundedTime <= jumpButtonGracePeriod)
+        {
+            _characterController.stepOffset = originalStepOffset;
+            _yForce = -0.5f;
+
+            if (Time.time - _jumpButtonPressedTime <= jumpButtonGracePeriod)
+            {
+                _yForce = jumpForce;
+                _jumpButtonPressedTime = null;
+                _lastGroundedTime = null;
+            }
+        }
+        else
+        {
+            _characterController.stepOffset = 0;
+        }
+
+        Vector3 velocity = movementDirection * speed;
+        velocity.y = _yForce;
+
+        _characterController.Move(velocity * Time.deltaTime);
+
+        if (movementDirection != Vector3.zero)
+        {
+            Quaternion toRotation = Quaternion.LookRotation(movementDirection, Vector3.up);
+
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation, rotationSpeed * Time.deltaTime);
+        }
+    } //end Update
 }
 

@@ -17,6 +17,7 @@ public class FirstPersonPlayerController : MonoBehaviour
     void Start()
     {
         _characterController = GetComponent<CharacterController>();
+
     }
 
     // Update is called once per frame

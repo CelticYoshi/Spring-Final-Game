@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ThirdPersonPlayerController : MonoBehaviour
+public class ThirdPersonMovement : MonoBehaviour
 {
     [Header("Assigned Components")]
     [SerializeField] private Animator _animator;

@@ -11,12 +11,14 @@ public class FirstPersonMovement : MonoBehaviour
     public Transform theCamera;
     private Vector3 _moveInput;
     private CharacterController _characterController;
+    private Vector3 _startingPosition;
     [SerializeField] private Animator _playerAnimator;
 
     // Start is called before the first frame update
     void Start()
     {
         _characterController = GetComponent<CharacterController>();
+        _startingPosition = transform.position;
     }
 
     // Update is called once per frame

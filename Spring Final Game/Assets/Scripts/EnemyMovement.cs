@@ -43,12 +43,13 @@ public class EnemyMovement : MonoBehaviour
   
     }// end Update
 
-    void OnCollisionEnter(Collision other)
+
+     public void EnemyAttack()
     {
-        if(other.gameObject.CompareTag("Player"))
-        {
-            Debug.Log("Enemy hit the player");
-            _isAttacking = true;
-        }
+        _isAttacking = true;
+        _enemyAnimation.SetBool("IsMoving", false);
+        _enemyAnimation.SetTrigger("IsAttacking");
+        StartCoroutine("EnemyAttackCoolDown");
     }
+
 }
